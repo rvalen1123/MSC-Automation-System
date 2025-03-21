@@ -1,0 +1,18 @@
+{
+  "name": "msc-wound-care-automation",
+  "version": "1.0.0",
+  "description": "MSC Wound Care Form Automation System",
+  "main": "index.ts",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --watch index.ts",
+    "build": "bun build index.ts --outdir ./dist"
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "railway": "^2.0.17"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
