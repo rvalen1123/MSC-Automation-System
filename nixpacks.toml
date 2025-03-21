@@ -1,8 +1,13 @@
 [phases.setup]
-nixPkgs = ["unzip", "curl"]
+nixPkgs = ["unzip", "curl", "nodejs"]
 
 [phases.install]
-cmds = ["curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install"]
+cmds = [
+  "curl -fsSL https://bun.sh/install | bash",
+  "export BUN_INSTALL=\"$HOME/.bun\"",
+  "export PATH=\"$BUN_INSTALL/bin:$PATH\"",
+  "~/.bun/bin/bun install"
+]
 
 [start]
-cmd = "bun run start"
+cmd = "~/.bun/bin/bun run start"
