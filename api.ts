@@ -4,11 +4,11 @@ import { Hono } from "hono";
 import { validator } from "hono/validator";
 import { HTTPException } from "hono/http-exception";
 import { config } from "./config";
-import { validate, validateCompleteForm } from "./validation";
+import { validate } from "./form-validation";
 import { createDocumentProcessor } from "./document-processor";
 
 // Create API router
-export const api = new Hono({ strict: false });
+const api = new Hono({ strict: false });
 
 // Error handling middleware
 api.use("*", async (c, next) => {
@@ -19,13 +19,12 @@ api.use("*", async (c, next) => {
       return error.getResponse();
     }
     
-    console.error("API Error:", error);
+    console.error(`[testing] API error:`, error);
     
     return c.json({
       success: false,
-      error: error.message || "An unexpected error occurred",
-      code: error.code || "INTERNAL_ERROR"
-    }, error.status || 500);
+      error: error.message || "An unexpected error occurred"
+    }, 500);
   }
 });
 
@@ -314,7 +313,7 @@ api.post("/process-document", async (c) => {
       success: false,
       error: error.message || "Failed to process documents",
       code: "DOCUMENT_PROCESSING_ERROR"
-    }, error.status || 500);
+    }, error instanceof HTTPException ? error.status : 500);
   }
 });
 
@@ -333,7 +332,8 @@ api.post("/validate-form", validator("json", (value, c) => {
     const formData = await c.req.json();
     
     // Validate the complete form
-    const validationResult = validateCompleteForm(formData);
+    // Assuming we have a default form type for validation
+    const validationResult = validate(formData, "patient");
     
     return c.json({
       success: true,
@@ -351,8 +351,8 @@ api.post("/validate-form", validator("json", (value, c) => {
   }
 });
 
-// Form submission API
-api.post("/submit-form", validator("json", (value, c) => {
+// Form submission API for DocuSeal forms
+api.post("/submit-docuseal-form", validator("json", (value, c) => {
   if (!value || typeof value !== "object") {
     return c.json({
       success: false,
@@ -382,8 +382,9 @@ api.post("/submit-form", validator("json", (value, c) => {
   try {
     const formData = await c.req.json();
     
-    // Validate the form data
-    const validationResult = validateCompleteForm(formData);
+    // Validate the form data with appropriate form type
+    const formType = formData.formType?.toLowerCase() || "patient";
+    const validationResult = validate(formData, formType);
     
     if (!validationResult.valid) {
       return c.json({
@@ -470,8 +471,187 @@ api.post("/email-forms", validator("json", (value, c) => {
 });
 
 // Health check endpoint
-api.get("/health", (c) => c.json({ 
-  status: "ok",
-  version: "1.0.0",
-  timestamp: new Date().toISOString()
-}));
+api.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    version: "1.0.0",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Chat API endpoint - connects to n8n webhook
+api.post("/chat", async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    const response = await fetch(config.N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ body })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[testing] N8N webhook error: ${errorText}`);
+      throw new Error(`Workflow error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    console.error(`[testing] Chat API error:`, error);
+    return c.json({
+      success: false,
+      error: error.message || "Failed to process chat message"
+    }, 500);
+  }
+});
+
+// File upload endpoint for document processing
+api.post("/upload", async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const files = formData.getAll("files");
+    const conversationId = formData.get("conversationId")?.toString();
+    
+    if (!files || files.length === 0) {
+      return c.json({
+        success: false,
+        error: "No files uploaded"
+      }, 400);
+    }
+    
+    if (!conversationId) {
+      return c.json({
+        success: false,
+        error: "Conversation ID is required"
+      }, 400);
+    }
+    
+    // Process documents using document processor
+    const documentProcessor = createDocumentProcessor();
+    const results = await Promise.all(
+      files.map(async (file) => {
+        if (file instanceof File) {
+          return await documentProcessor.processDocument(file);
+        }
+        return null;
+      })
+    );
+    
+    // Filter out null results
+    const validResults = results.filter(result => result !== null);
+    
+    // Send the results to n8n for further processing
+    const response = await fetch(config.N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        body: {
+          conversationId,
+          documentResults: validResults,
+          messageType: "document_upload"
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to process documents: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    console.error(`[testing] Document upload error:`, error);
+    return c.json({
+      success: false,
+      error: error.message || "Failed to process uploaded documents"
+    }, 500);
+  }
+});
+
+// Get form templates
+api.get("/form-templates", (c) => {
+  const manufacturers = Object.entries(config.MANUFACTURERS).map(([id, info]) => ({
+    id,
+    name: info.name,
+    formTypes: info.formTypes
+  }));
+  
+  return c.json({
+    success: true,
+    manufacturers
+  });
+});
+
+// Get form status for a specific conversation
+api.get("/form-status/:conversationId", async (c) => {
+  try {
+    const conversationId = c.req.param("conversationId");
+    
+    // Call our Supabase edge function to get form status
+    const response = await fetch(`${config.SUPABASE_FUNCTIONS_URL}/form-status?conversationId=${conversationId}`, {
+      headers: {
+        "Authorization": `Bearer ${config.SUPABASE_ANON_KEY}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get form status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    console.error(`[testing] Form status error:`, error);
+    return c.json({
+      success: false,
+      error: error.message || "Failed to get form status"
+    }, 500);
+  }
+});
+
+// Submit a completed form to DocuSeal
+api.post("/submit-form", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { formId, formData, patientInfo } = body;
+    
+    if (!formId || !formData || !patientInfo) {
+      return c.json({
+        success: false,
+        error: "Missing required fields"
+      }, 400);
+    }
+    
+    // Call our Supabase edge function to create DocuSeal submission
+    const response = await fetch(`${config.SUPABASE_FUNCTIONS_URL}/create-docuseal-submission`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${config.SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to submit form: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    console.error(`[testing] Form submission error:`, error);
+    return c.json({
+      success: false,
+      error: error.message || "Failed to submit form"
+    }, 500);
+  }
+});
+
+export { api };

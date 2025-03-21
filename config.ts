@@ -21,10 +21,12 @@ const defaultConfig = {
   S3_REGION: 'us-east-1',
   
   // Email configuration
-  SMTP_HOST: 'smtp.example.com',
+  SMTP_HOST: 'smtp.office365.com',
   SMTP_PORT: 587,
   SMTP_SECURE: false,
-  SMTP_USER: 'notifications@msc-wound-care.com',
+  SMTP_USER: 'forms@msc-wound-care.com',
+  SMTP_PASSWORD: '',
+  EMAIL_FROM: 'MSC Wound Care Forms <forms@msc-wound-care.com>',
   
   // Security settings
   SESSION_SECRET: 'changeme-in-production',
@@ -41,32 +43,62 @@ const defaultConfig = {
   MAX_UPLOAD_SIZE_MB: 10,
   SUPPORTED_UPLOAD_FORMATS: ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'],
   
+  // Supabase configuration
+  SUPABASE_URL: 'https://pxlzjrjcqwhskyxazyc.supabase.co',
+  SUPABASE_ANON_KEY: '',
+  SUPABASE_FUNCTIONS_URL: 'https://pxlzjrjcqwhskyxazyc.functions.supabase.co',
+  
+  // DocuSeal configuration
+  DOCUSEAL_URL: 'https://docuseal.co',
+  DOCUSEAL_API_KEY: '',
+  
   // Manufacturer specific configuration
   MANUFACTURERS: {
     legacy: {
       name: 'Legacy Medical',
-      apiEndpoint: 'https://api.legacymedical.com/forms',
-      requiresAuth: true
+      formTypes: ['agreement', 'ivr', 'order'],
+      templateIds: {
+        agreement: 'template_legacy_agreement',
+        ivr: 'template_legacy_ivr',
+        order: 'template_legacy_order'
+      }
     },
     stability: {
       name: 'Stability Biologics',
-      apiEndpoint: 'https://stability-bio.com/api/v2/forms',
-      requiresAuth: true
+      formTypes: ['agreement', 'ivr', 'order'],
+      templateIds: {
+        agreement: 'template_stability_agreement',
+        ivr: 'template_stability_ivr',
+        order: 'template_stability_order'
+      }
     },
     advanced: {
       name: 'Advanced Solution',
-      apiEndpoint: 'https://advsolution.com/api/forms',
-      requiresAuth: false
+      formTypes: ['agreement', 'ivr', 'order', 'onboarding'],
+      templateIds: {
+        agreement: 'template_advanced_agreement',
+        ivr: 'template_advanced_ivr',
+        order: 'template_advanced_order',
+        onboarding: 'template_advanced_onboarding'
+      }
     },
     aczdistribution: {
       name: 'ACZ Distribution',
-      apiEndpoint: 'https://forms.aczdist.com/submit',
-      requiresAuth: true
+      formTypes: ['agreement', 'ivr', 'order'],
+      templateIds: {
+        agreement: 'template_acz_agreement',
+        ivr: 'template_acz_ivr',
+        order: 'template_acz_order'
+      }
     },
     medlife: {
       name: 'MedLife Solutions',
-      apiEndpoint: 'https://api.medlifesol.com/forms/new',
-      requiresAuth: true
+      formTypes: ['agreement', 'ivr', 'order'],
+      templateIds: {
+        agreement: 'template_medlife_agreement',
+        ivr: 'template_medlife_ivr',
+        order: 'template_medlife_order'
+      }
     }
   }
 };
