@@ -1,7 +1,7 @@
 // document-processor.ts - Document processing module for MSC Wound Care Form System
 
 import { config } from './config';
-import { extractFormData, ValidationResult, validate } from './validation';
+import { extractFormData, ValidationResult, validate } from './form-validation';
 
 // File type definitions
 export interface FileInfo {
@@ -83,7 +83,7 @@ export class DocumentProcessor {
         extractedData,
         validationResult
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Document processing error:', error);
       
       return {
@@ -249,73 +249,59 @@ export class DocumentProcessor {
     `;
   }
   
+  // Sample text generation for image files
   private generateSampleImageText(): string {
     return `
-      Patient Information Form
-      
-      Name: John Smith
-      Date of Birth: 05/12/1965
-      Phone: (555) 123-4567
-      Email: john.smith@example.com
-      
-      Insurance Information:
-      Provider: UnitedHealthcare
-      Policy Number: UHC7654321
-      Group Number: GRP123456
-      
-      Medical Information:
-      Primary Diagnosis: Diabetic foot ulcer
-      ICD-10 Code: E11.621
-      Wound Location: Left foot, plantar surface
-      Wound Duration: Approximately 3 weeks
-      
-      Physician Information:
-      Dr. Maria Rodriguez
-      NPI: 1234567890
-      Facility: Metro Wound Care Center
-    `;
-  }
-  
-  private generateSampleImageText(): string {
-    return `
-      WOUND CARE REQUISITION
+      MSC WOUND CARE FORM
       
       Patient: Sarah Johnson
-      DOB: 11/22/1978
-      Contact: (555) 987-6543
+      DOB: 03/18/1972
+      ID: PAT-98765
       
-      Insurance: Blue Cross Blue Shield
-      Policy: BCBS9876543
+      Wound Assessment:
+      - Venous ulcer, right lateral ankle
+      - Size: 3.2cm x 2.5cm
+      - Depth: 0.4cm
+      - Moderate exudate
+      - Granulation tissue present
       
-      Referring Physician: Dr. James Wilson
-      Diagnosis: Pressure ulcer, sacral region
-      ICD-10: L89.150
+      Treatment Plan:
+      - Advanced wound dressing
+      - Compression therapy
+      - Offloading
     `;
   }
   
+  // Sample text generation for doc files
   private generateSampleDocText(): string {
     return `
-      PATIENT MEDICAL HISTORY
+      STABILITY BIOLOGICS
       
-      Patient Name: Robert Garcia
-      Date of Birth: 03/15/1957
+      AGREEMENT FORM
       
-      Chief Complaint: Venous ulcer, right ankle
+      This agreement is made between Stability Biologics and Robert Thompson, MD.
       
-      Insurance: Medicare
-      Medicare ID: 1234-567-8901-A
+      Terms:
+      1. Provider agrees to follow all usage guidelines.
+      2. Provider will report all adverse events within 24 hours.
+      3. Provider will maintain proper storage conditions.
       
-      Treating Physician: Dr. Lisa Chen
+      Provider Information:
+      Name: Robert Thompson, MD
+      NPI: 5551234567
+      Practice: Westside Wound Care Specialists
+      Address: 123 Medical Center Drive, Suite 300
+      City: Springfield
+      State: IL
+      Zip: 62701
       
-      Current Medications:
-      - Lisinopril 10mg daily
-      - Metformin 500mg twice daily
-      - Aspirin 81mg daily
+      Authorized Signature: _______________________
+      Date: 02/15/2025
     `;
   }
 }
 
-// Factory function to create document processor
+// Factory function to create a document processor instance
 export function createDocumentProcessor(): DocumentProcessor {
   return new DocumentProcessor();
 }

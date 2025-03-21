@@ -11,8 +11,28 @@ export interface ValidationError {
   message: string;
 }
 
+// Define the interface for field rules
+export interface FieldRule {
+  required?: boolean;
+  minLength?: number;
+  length?: number;
+  pattern?: RegExp;
+  oneOf?: string[];
+  minItems?: number;
+}
+
+// Define interface for rule sets
+export interface RuleSet {
+  [field: string]: FieldRule;
+}
+
+// Define interface for validation rules
+export interface ValidationRules {
+  [ruleSet: string]: RuleSet;
+}
+
 // Validation rules for different form types
-const validationRules = {
+const validationRules: ValidationRules = {
   patient: {
     firstName: {
       required: true,

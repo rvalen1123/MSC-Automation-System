@@ -24,4 +24,16 @@ app.get("/", (c) => {
   return c.html(simplePage);
 });
 
+// Basic test for the server
+if (import.meta.vitest) {
+  const { it, expect } = import.meta.vitest;
+  
+  it('should return HTML for the root route', async () => {
+    const res = await app.request("/");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+  });
+}
+
+// Export the app
 export default app; 

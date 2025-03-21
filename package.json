@@ -19,25 +19,12 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",
+    "@types/jest": "^29.5.12",
+    "@types/supertest": "^6.0.2",
     "bun-types": "latest",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "supertest": "^6.3.3"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {},
-    "testMatch": [
-      "**/__tests__/**/*.[jt]s?(x)",
-      "**/?(*.)+(spec|test).[jt]s?(x)"
-    ],
-    "collectCoverageFrom": [
-      "**/*.{js,jsx,ts,tsx}",
-      "!**/node_modules/**",
-      "!**/coverage/**",
-      "!**/dist/**",
-      "!**/tests/**",
-      "!jest.config.js"
-    ]
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1"
   }
 }

@@ -14,7 +14,7 @@ const api = new Hono({ strict: false });
 api.use("*", async (c, next) => {
   try {
     await next();
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof HTTPException) {
       return error.getResponse();
     }
@@ -95,7 +95,7 @@ api.post("/webhook", async (c) => {
     
     const data = await response.json();
     return c.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Webhook error:", error);
     
     return c.json({
